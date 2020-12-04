@@ -11,7 +11,7 @@ type configTemplate = typeof configTemplate;
 export default class MyntClient extends Client {
     public readonly config: { [key in keyof configTemplate]: IFunctionType<configTemplate[key]> };
     public readonly database?: Database;
-    public lastDmAuthor?: User;
+    public timer?: NodeJS.Timeout;
 
     public constructor(config: { [key in keyof configTemplate]: IFunctionType<configTemplate[key]> }, database?: Database, options?: ClientOptions) {
         super(options);

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getDuration = exports.pagify = exports.splitArguments = void 0;
+exports.loadBoosters = exports.getDuration = exports.pagify = exports.splitArguments = void 0;
 const discord_js_1 = require("discord.js");
 function splitArguments(argument, amount) {
     const args = [];
@@ -95,4 +95,26 @@ function getDuration(member) {
     return duration;
 }
 exports.getDuration = getDuration;
+async function loadBoosters(client, server) {
+    const database = client.database;
+    if (!database) {
+        return;
+    }
+    await database.guilds.updateOne({ id: server.id }, { "$set": { "boosters": [] } });
+    const members = server.members.cache.filter(member => member.premiumSince !== null);
+    for (const user of members) {
+        const guild = await client.getGuildFromDatabase(database, server.id);
+        if (!guild) {
+            return;
+        }
+        const [id, member] = user;
+        const amount = 1;
+        let duration = getDuration(member);
+        if (!duration) {
+            duration = 0;
+        }
+        await database.guilds.updateOne({ id: server.id }, { "$push": { "boosters": { "id": id, "amount": amount, "duration": duration } } });
+    }
+}
+exports.loadBoosters = loadBoosters;
 //# sourceMappingURL=Utils.js.map

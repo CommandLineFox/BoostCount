@@ -1,7 +1,7 @@
 import Event from "@event/Event";
 import { Guild, TextChannel } from "discord.js";
 import BotClient from "~/BotClient";
-import { pagify } from "~/utils/Utils";
+import { loadBoosters, pagify } from "~/utils/Utils";
 
 export default class Reload extends Event {
     public constructor() {
@@ -14,6 +14,7 @@ export default class Reload extends Event {
             return;
         }
 
+        await loadBoosters(client, server);
         const guild = await client.getGuildFromDatabase(database, server.id);
         if (!guild || !guild.config || !guild.config.boosts || !guild.config.boosts.channel) {
             return;

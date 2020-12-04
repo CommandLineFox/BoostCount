@@ -14,6 +14,7 @@ class Reload extends Event_1.default {
         if (!database) {
             return;
         }
+        await Utils_1.loadBoosters(client, server);
         const guild = await client.getGuildFromDatabase(database, server.id);
         if (!guild || !guild.config || !guild.config.boosts || !guild.config.boosts.channel) {
             return;

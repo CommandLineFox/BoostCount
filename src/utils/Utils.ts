@@ -1,5 +1,6 @@
 import { Guild, GuildMember, Message, MessageEmbed, ReactionEmoji } from "discord.js";
 import { Booster, Guild as GuildModel } from "@models/Guild";
+import BotClient from "~/BotClient";
 
 export function splitArguments(argument: string, amount: number): string[] {
     const args = [];
@@ -104,4 +105,29 @@ export function getDuration(member: GuildMember): number | undefined {
     const duration = now.getMonth() - date.getMonth() + years;
 
     return duration;
+}
+
+export async function loadBoosters(client: BotClient, server: Guild): Promise<void> {
+    const database = client.database;
+    if (!database) {
+        return;
+    }
+
+    await database.guilds.updateOne({ id: server.id }, { "$set": { "boosters": [] } });
+    const members = server.members.cache.filter(member => member.premiumSince !== null);
+    for (const user of members) {
+        const guild = await client.getGuildFromDatabase(database, server.id);
+        if (!guild) {
+            return;
+        }
+
+        const [id, member] = user;
+        const amount = 1;
+        let duration = getDuration(member);
+        if (!duration) {
+            duration = 0;
+        }
+
+        await database.guilds.updateOne({ id: server.id }, { "$push": { "boosters": { "id": id, "amount": amount, "duration": duration } } });
+    }
 }
