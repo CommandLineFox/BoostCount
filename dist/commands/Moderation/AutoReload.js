@@ -14,9 +14,21 @@ class Ping extends Command_1.default {
             group: Groups_1.Moderation
         });
     }
-    run(event) {
+    async run(event) {
         const client = event.client;
+        const database = client.database;
+        if (!database) {
+            return;
+        }
         const guild = event.guild;
+        const model = await client.getGuildFromDatabase(database, guild.id);
+        if (!model) {
+            return;
+        }
+        if (!model.config.boosts || !model.config.boosts.channel) {
+            event.send("There's no list for me to refresh.");
+            return;
+        }
         const argument = event.argument;
         switch (argument.split(/\s/, 1)[0].trim().toLowerCase()) {
             case "start": {
