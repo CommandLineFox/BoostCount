@@ -12,6 +12,7 @@ class Ready extends Event_1.default {
         var _a, _b;
         console.log(`Logged in as ${(_a = client.user) === null || _a === void 0 ? void 0 : _a.tag}`);
         await ((_b = client.user) === null || _b === void 0 ? void 0 : _b.setActivity("with Alex", { type: "PLAYING" }));
+        client.emit("handleTimers");
     }
 }
 exports.default = Ready;

@@ -16,6 +16,7 @@ export interface GuildConfig {
     boosts?: GuildBoosts;
     staff?: string[];
     includeAmount?: boolean;
+    timer?: boolean;
 }
 
 export interface GuildDoc {

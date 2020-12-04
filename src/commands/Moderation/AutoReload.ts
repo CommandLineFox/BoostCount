@@ -33,25 +33,24 @@ export default class Ping extends Command {
         const argument = event.argument;
         switch (argument.split(/\s/, 1)[0].trim().toLowerCase()) {
             case "start": {
-                if (client.timer) {
+                if (model.config.timer) {
                     event.send("I'm already refreshing the list.");
                     break;
                 }
 
-                client.timer = setInterval(() => {
-                    client.emit("reload", event.guild);
-                }, 3600000);
+                await database.guilds.updateOne({ id: model.id }, { "$set": { "config.timer": true } });
                 event.send("I will refresh the list every hour.");
                 break;
             }
 
             case "stop": {
-                if (!client.timer) {
+                if (!model.config.timer) {
                     event.send("I'm not refreshing the list.");
                     break;
                 }
 
-                client.timer = undefined;
+                model.config.timer = undefined;
+                await database.guilds.updateOne({ id: model.id }, { "$unset": { "config.timer": "" } });
                 event.send("I will no longer refresh the list every hour.");
                 break;
             }
@@ -61,6 +60,6 @@ export default class Ping extends Command {
                 break;
             }
         }
-        client.emit("reload", guild);
+        client.emit("handleTimers");
     }
 }
