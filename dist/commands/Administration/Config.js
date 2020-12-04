@@ -35,9 +35,18 @@ class Config extends Command_1.default {
                 await prefixSettings(event, option, args, guild);
                 break;
             }
+            case "staff": {
+                staffSettings(event, option, args, guild);
+                break;
+            }
             case "boosts":
             case "channel": {
                 await boostChannelSettings(event, option, args, guild);
+                break;
+            }
+            case "amount": {
+                await amountSettings(event, option, guild);
+                break;
             }
         }
     }
@@ -75,8 +84,46 @@ async function prefixSettings(event, option, args, guild) {
         }
     }
 }
-async function boostChannelSettings(event, option, args, guild) {
+async function staffSettings(event, option, args, guild) {
     var _a, _b;
+    const database = event.client.database;
+    await CommandUtils_1.databaseCheck(database, guild, "staff");
+    if (!option) {
+        await CommandUtils_1.displayData(event, guild, "staff", true);
+        return;
+    }
+    if (!args) {
+        await event.send("You need to specify a role.");
+        return;
+    }
+    const role = event.guild.roles.cache.find(role => role.id === args || role.name === args || `<@&${role.id}>` === args);
+    if (!role) {
+        await event.send("Couldn't find the role you're looking for.");
+        return;
+    }
+    switch (option.toLowerCase()) {
+        case "add": {
+            if ((_a = guild.config.staff) === null || _a === void 0 ? void 0 : _a.includes(role.id)) {
+                await event.send("The specified role is already a staff role.");
+                break;
+            }
+            await (database === null || database === void 0 ? void 0 : database.guilds.updateOne({ id: guild.id }, { "$push": { "config.staff": role.id } }));
+            await event.send(`Added \`${role.name}\` as a staff role.`);
+            break;
+        }
+        case "remove": {
+            if (!((_b = guild.config.staff) === null || _b === void 0 ? void 0 : _b.includes(role.id))) {
+                await event.send("The specified role isn't a staff role.");
+                break;
+            }
+            await (database === null || database === void 0 ? void 0 : database.guilds.updateOne({ id: guild.id }, { "$pull": { "config.staff": role.id } }));
+            await event.send(`\`${role.name}\` is no longer a staff role.`);
+            break;
+        }
+    }
+}
+async function boostChannelSettings(event, option, args, guild) {
+    var _a, _b, _c;
     const client = event.client;
     const database = client.database;
     await CommandUtils_1.databaseCheck(database, guild, "boosts");
@@ -100,16 +147,46 @@ async function boostChannelSettings(event, option, args, guild) {
                 break;
             }
             await (database === null || database === void 0 ? void 0 : database.guilds.updateOne({ id: guild === null || guild === void 0 ? void 0 : guild.id }, { "$set": { "config.boosts.channel": channel.id } }));
+            client.emit("channelChanged", event.guild, (_b = guild.config.boosts) === null || _b === void 0 ? void 0 : _b.channel, channel.id);
             await event.send(`The booster list channel has been set to <#${channel.id}>`);
             break;
         }
         case "remove": {
-            if (!((_b = guild.config.boosts) === null || _b === void 0 ? void 0 : _b.channel)) {
+            if (!((_c = guild.config.boosts) === null || _c === void 0 ? void 0 : _c.channel)) {
                 await event.send("The booster list channel has already been removed.");
                 break;
             }
-            await (database === null || database === void 0 ? void 0 : database.guilds.updateOne({ id: guild === null || guild === void 0 ? void 0 : guild.id }, { "$unset": { "config.boosts.channel": "" } }));
+            client.emit("channelChanged", event.guild, guild.config.boosts.channel, undefined);
+            await (database === null || database === void 0 ? void 0 : database.guilds.updateOne({ id: guild === null || guild === void 0 ? void 0 : guild.id }, { "$set": { "config.boosts": {} } }));
             await event.send("The booster list channel has been removed.");
+            break;
+        }
+    }
+}
+async function amountSettings(event, option, guild) {
+    const client = event.client;
+    const database = client.database;
+    if (!option) {
+        await CommandUtils_1.displayData(event, guild, "amount", true);
+        return;
+    }
+    switch (option.toLowerCase()) {
+        case "enable": {
+            if (guild.config.includeAmount) {
+                await event.send("Amount is already included.");
+                break;
+            }
+            await (database === null || database === void 0 ? void 0 : database.guilds.updateOne({ id: guild === null || guild === void 0 ? void 0 : guild.id }, { "$set": { "config.includeAmount": true } }));
+            await event.send("Amount of boosts is now included.");
+            break;
+        }
+        case "disable": {
+            if (!guild.config.includeAmount) {
+                await event.send("Amount is already excluded.");
+                break;
+            }
+            await (database === null || database === void 0 ? void 0 : database.guilds.updateOne({ id: guild === null || guild === void 0 ? void 0 : guild.id }, { "$unset": { "config.includeAmount": "" } }));
+            await event.send("Amount of boosts is now excluded.");
             break;
         }
     }
@@ -118,7 +195,9 @@ async function displayAllSettings(event, guild) {
     const embed = new discord_js_1.MessageEmbed()
         .setTitle("The current settings for this server:")
         .addField("Prefix", await CommandUtils_1.displayData(event, guild, "prefix"), true)
+        .addField("Staff", await CommandUtils_1.displayData(event, guild, "staff"), true)
         .addField("Booster list", await CommandUtils_1.displayData(event, guild, "channel"), true)
+        .addField("Amount", await CommandUtils_1.displayData(event, guild, "amount"), true)
         .setColor("#61e096")
         .setFooter(`Requested by ${event.author.tag}`, event.author.displayAvatarURL());
     await event.send({ embed: embed });

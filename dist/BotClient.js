@@ -41,6 +41,30 @@ class MyntClient extends discord_js_1.Client {
         }
         return (await guild.members.fetch({ query: argument, limit: 1 })).first();
     }
+    async isMod(member, guild) {
+        var _a;
+        if (this.isAdmin(member)) {
+            return true;
+        }
+        const guildModel = await ((_a = this.database) === null || _a === void 0 ? void 0 : _a.guilds.findOne({ id: guild.id }));
+        if (!guildModel) {
+            return false;
+        }
+        const staff = guildModel.config.staff;
+        if (!staff) {
+            return false;
+        }
+        if (staff.length === 0) {
+            return false;
+        }
+        let mod = false;
+        staff.forEach(id => {
+            if (member.roles.cache.some(role => role.id === id)) {
+                mod = true;
+            }
+        });
+        return mod;
+    }
     isAdmin(member) {
         return member.permissions.has("ADMINISTRATOR");
     }

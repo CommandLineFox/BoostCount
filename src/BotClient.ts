@@ -51,6 +51,35 @@ export default class MyntClient extends Client {
         return (await guild.members.fetch({ query: argument, limit: 1 })).first();
     }
 
+    public async isMod(member: GuildMember, guild: Guild): Promise<boolean> {
+        if (this.isAdmin(member)) {
+            return true;
+        }
+
+        const guildModel = await this.database?.guilds.findOne({ id: guild.id });
+        if (!guildModel) {
+            return false;
+        }
+
+        const staff = guildModel.config.staff;
+        if (!staff) {
+            return false;
+        }
+
+        if (staff.length === 0) {
+            return false;
+        }
+
+        let mod = false;
+        staff.forEach(id => {
+            if (member.roles.cache.some(role => role.id === id)) {
+                mod = true;
+            }
+        });
+
+        return mod;
+    }
+
     public isAdmin(member: GuildMember): boolean {
         return member.permissions.has("ADMINISTRATOR");
 
