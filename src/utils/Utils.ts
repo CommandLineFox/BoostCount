@@ -102,7 +102,10 @@ export function getDuration(member: GuildMember): number | undefined {
 
     const now = new Date();
     const years = (now.getFullYear() - date.getFullYear()) * 12;
-    const duration = now.getMonth() - date.getMonth() + years;
+    let duration = now.getMonth() - date.getMonth() + years;
+    if (now.getDate() > date.getDate()) {
+        duration += 1;
+    }
 
     return duration;
 }
